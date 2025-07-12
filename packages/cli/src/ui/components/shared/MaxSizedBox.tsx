@@ -380,12 +380,12 @@ function visitBoxRow(element: React.ReactNode): Row {
       parentProps === undefined
         ? currentProps
         : { ...parentProps, ...currentProps };
-    React.Children.forEach(children, (child) =>
-      visitRowChild(child, mergedProps),
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    React.Children.forEach(children, (child: any) => visitRowChild(child, mergedProps));
   }
 
-  React.Children.forEach(element.props.children, (child) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  React.Children.forEach(element.props.children, (child: any) =>
     visitRowChild(child, undefined),
   );
 
