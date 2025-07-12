@@ -11,7 +11,7 @@
     "incremental": true,
     "declaration": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["node", "react", "ink", "vitest/globals"],
+    "types": ["node", "react", "ink"],
     "lib": ["ES2023"],
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -20,5 +20,6 @@
       "./packages/cli/src/types"
     ],
     "target": "es2022"
-  }
+  },
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.integration.test.ts", "**/*.integration.test.tsx"]
 }
