@@ -36,3 +36,13 @@ declare module 'string-width' {
   const stringWidth: (str: string) => number;
   export default stringWidth;
 }
+
+// ----- ink-spinner ----------------------------------------------------------
+declare module 'ink-spinner' {
+  import * as React from 'react';
+  export interface SpinnerProps {
+    readonly type?: string;
+  }
+  const Spinner: React.FC<SpinnerProps>;
+  export default Spinner;
+}
