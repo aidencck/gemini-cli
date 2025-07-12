@@ -8,7 +8,6 @@ import React from 'react';
 import { Text, Box } from 'ink';
 // Use a curated Lowlight instance that registers only a handful of languages
 // to significantly cut bundle size.
-// @ts-ignore – module written in TS but imported with JS extension for NodeNext compatibility
 import { lowlight } from './lowlightInstance.js';
 import type {
   Root,
@@ -24,7 +23,7 @@ import {
   MINIMUM_MAX_HEIGHT,
 } from '../components/shared/MaxSizedBox.js';
 
-// Lowlight instance is pre-configured in `lowlightInstance.ts`.
+// Lowlight is preconfigured with selected languages in `lowlightInstance`.
 
 function renderHastNode(
   node: Root | Element | HastText | RootContent,
