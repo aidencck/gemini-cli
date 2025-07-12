@@ -133,7 +133,8 @@ export const MaxSizedBox: React.FC<MaxSizedBoxProps> = ({
     debugReportError('MaxSizedBox children must be <Box> elements', element);
   }
 
-  React.Children.forEach(children, visitRows);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  React.Children.forEach(children, (child: any) => visitRows(child));
 
   const contentWillOverflow =
     (targetMaxHeight !== undefined &&
@@ -169,10 +170,27 @@ export const MaxSizedBox: React.FC<MaxSizedBoxProps> = ({
         : laidOutStyledText.slice(0, visibleContentHeight)
       : laidOutStyledText;
 
-  const visibleLines = visibleStyledText.map((line, index) => (
+  // ---------------------------------------------------------------------
+  //  Virtualisation: if no explicit maxHeight is provided, we may still
+  //  be asked to render thousands of lines (e.g. when showing large files
+  //  in the chat history).  Ink performance deteriorates once the element
+  //  tree reaches ~2-3k nodes, so we hard-cap the rendering window.
+  // ---------------------------------------------------------------------
+  const VIRTUAL_WINDOW_SIZE = 500;
+  const virtualisedStyledText = React.useMemo(() => {
+    if (maxHeight !== undefined) {
+      return visibleStyledText; // already capped by maxHeight logic
+    }
+    if (visibleStyledText.length <= VIRTUAL_WINDOW_SIZE) {
+      return visibleStyledText;
+    }
+    return visibleStyledText.slice(0, VIRTUAL_WINDOW_SIZE);
+  }, [visibleStyledText, maxHeight]);
+
+  const visibleLines = virtualisedStyledText.map((line: StyledText[], index: number) => (
     <Box key={index}>
       {line.length > 0 ? (
-        line.map((segment, segIndex) => (
+        line.map((segment: StyledText, segIndex: number) => (
           <Text key={segIndex} {...segment.props}>
             {segment.text}
           </Text>

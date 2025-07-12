@@ -9,6 +9,10 @@ import { Text, Box } from 'ink';
 // Use a curated Lowlight instance that registers only a handful of languages
 // to significantly cut bundle size.
 import { lowlight } from './lowlightInstance.js';
+// Simple LRU cache (FIFO eviction) for highlighted lines to speed up re-renders.
+// Key: `${language}::${code}`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const highlightCache = new Map<string, any>();
 import type {
   Root,
   Element,
@@ -103,7 +107,30 @@ export function colorizeCode(
   maxWidth?: number,
 ): React.ReactNode {
   const codeToHighlight = code.replace(/\n$/, '');
+
   const activeTheme = themeManager.getActiveTheme();
+
+  // Memoise highlighted output by (code, language) key to avoid
+  // recomputing syntax highlighting on every render when nothing changed.
+  const highlightedLines = React.useMemo(() => {
+    const cacheKey = `${language ?? 'auto'}::${codeToHighlight}`;
+    const cached = highlightCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    const linesArr = codeToHighlight.split('\n').map((line) =>
+      (!language || !lowlight.registered(language)
+        ? lowlight.highlightAuto(line)
+        : lowlight.highlight(language, line)) as unknown as Root,
+    );
+    highlightCache.set(cacheKey, linesArr);
+    // Keep cache size reasonable (simple FIFO eviction)
+    if (highlightCache.size > 100) {
+      const [firstKey] = highlightCache.keys();
+      highlightCache.delete(firstKey);
+    }
+    return linesArr;
+  }, [codeToHighlight, language]);
 
   try {
     // Render the HAST tree using the adapted theme
@@ -123,11 +150,6 @@ export function colorizeCode(
       }
     }
 
-    const getHighlightedLines = (line: string) =>
-      !language || !lowlight.registered(language)
-        ? lowlight.highlightAuto(line)
-        : lowlight.highlight(language, line);
-
     return (
       <MaxSizedBox
         maxHeight={availableHeight}
@@ -137,7 +159,7 @@ export function colorizeCode(
       >
         {lines.map((line, index) => {
           const renderedNode = renderHastNode(
-            getHighlightedLines(line),
+            highlightedLines[index],
             activeTheme,
             undefined,
           );

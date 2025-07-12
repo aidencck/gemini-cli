@@ -23,6 +23,12 @@ esbuild
     format: 'esm',
     minify: true, // Remove unnecessary whitespace & dead code
     treeShaking: true,
+    sourcemap: false,
+    external: [
+      // Mark heavy optional runtime-only deps so they are kept as node externals
+      /^@opentelemetry\/.*/, // all OpenTelemetry packages
+      'react-devtools-core',
+    ],
     define: {
       'process.env.CLI_VERSION': JSON.stringify(pkg.version),
     },

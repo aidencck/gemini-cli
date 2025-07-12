@@ -33,6 +33,7 @@ import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
 import { formatDuration, formatMemoryUsage } from '../utils/formatters.js';
 import { getCliVersion } from '../../utils/version.js';
 import { LoadedSettings } from '../../config/settings.js';
+import React from 'react';
 
 export interface SlashCommandActionReturn {
   shouldScheduleTool?: boolean;
@@ -79,12 +80,13 @@ export const useSlashCommandProcessor = (
   openPrivacyNotice: () => void,
 ) => {
   const session = useSessionStats();
-  const gitService = useMemo(() => {
-    if (!config?.getProjectRoot()) {
-      return;
+  const [gitService, setGitService] = React.useState<GitService | undefined>();
+
+  React.useEffect(() => {
+    if (!gitService && config?.getProjectRoot()) {
+      setGitService(new GitService(config.getProjectRoot()));
     }
-    return new GitService(config.getProjectRoot());
-  }, [config]);
+  }, [config, gitService]);
 
   const pendingHistoryItems: HistoryItemWithoutId[] = [];
   const [pendingCompressionItemRef, setPendingCompressionItem] =
