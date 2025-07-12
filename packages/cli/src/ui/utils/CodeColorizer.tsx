@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, Box } from 'ink';
-import { common, createLowlight } from 'lowlight';
 import type {
   Root,
   Element,
@@ -21,8 +20,45 @@ import {
   MINIMUM_MAX_HEIGHT,
 } from '../components/shared/MaxSizedBox.js';
 
-// Configure theming and parsing utilities.
-const lowlight = createLowlight(common);
+// Lazy loading types
+type LowlightInstance = {
+  highlightAuto: (code: string) => Root;
+  highlight: (language: string, code: string) => Root;
+  registered: (language: string) => boolean;
+};
+
+// Cache for the lazy-loaded lowlight instance
+let lowlightInstance: LowlightInstance | null = null;
+let loadingPromise: Promise<LowlightInstance> | null = null;
+
+// Lazy load the highlighting libraries
+async function loadHighlighting(): Promise<LowlightInstance> {
+  if (lowlightInstance) {
+    return lowlightInstance;
+  }
+
+  if (loadingPromise) {
+    return loadingPromise;
+  }
+
+  loadingPromise = (async () => {
+    try {
+      const { common, createLowlight } = await import('lowlight');
+      lowlightInstance = createLowlight(common);
+      return lowlightInstance;
+    } catch (error) {
+      console.error('[CodeColorizer] Failed to load syntax highlighting:', error);
+      // Return a minimal implementation that doesn't crash
+      return {
+        highlightAuto: (code: string) => ({ type: 'root', children: [{ type: 'text', value: code }] }),
+        highlight: (language: string, code: string) => ({ type: 'root', children: [{ type: 'text', value: code }] }),
+        registered: () => false,
+      };
+    }
+  })();
+
+  return loadingPromise;
+}
 
 function renderHastNode(
   node: Root | Element | HastText | RootContent,
@@ -90,6 +126,7 @@ function renderHastNode(
 
 /**
  * Renders syntax-highlighted code for Ink applications using a selected theme.
+ * Uses lazy loading to only load syntax highlighting libraries when needed.
  *
  * @param code The code string to highlight.
  * @param language The language identifier (e.g., 'javascript', 'css', 'html')
@@ -101,8 +138,48 @@ export function colorizeCode(
   availableHeight?: number,
   maxWidth?: number,
 ): React.ReactNode {
-  const codeToHighlight = code.replace(/\n$/, '');
+  const [highlightInstance, setHighlightInstance] = useState<LowlightInstance | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const activeTheme = themeManager.getActiveTheme();
+
+  useEffect(() => {
+    loadHighlighting().then((instance) => {
+      setHighlightInstance(instance);
+      setIsLoading(false);
+    });
+  }, []);
+
+  // Render fallback while loading or if highlighting fails
+  const renderFallback = (codeToRender: string) => {
+    const lines = codeToRender.split('\n');
+    const padWidth = String(lines.length).length;
+    
+    return (
+      <MaxSizedBox
+        maxHeight={availableHeight}
+        maxWidth={maxWidth}
+        overflowDirection="top"
+      >
+        {lines.map((line, index) => (
+          <Box key={index}>
+            <Text color={activeTheme.colors.Gray}>
+              {`${String(index + 1).padStart(padWidth, ' ')} `}
+            </Text>
+            <Text color={activeTheme.defaultColor} wrap="wrap">
+              {line}
+            </Text>
+          </Box>
+        ))}
+      </MaxSizedBox>
+    );
+  };
+
+  const codeToHighlight = code.replace(/\n$/, '');
+
+  // Show loading state or fallback if highlighting not available
+  if (isLoading || !highlightInstance) {
+    return renderFallback(codeToHighlight);
+  }
 
   try {
     // Render the HAST tree using the adapted theme
@@ -123,9 +200,9 @@ export function colorizeCode(
     }
 
     const getHighlightedLines = (line: string) =>
-      !language || !lowlight.registered(language)
-        ? lowlight.highlightAuto(line)
-        : lowlight.highlight(language, line);
+      !language || !highlightInstance.registered(language)
+        ? highlightInstance.highlightAuto(line)
+        : highlightInstance.highlight(language, line);
 
     return (
       <MaxSizedBox
@@ -161,24 +238,6 @@ export function colorizeCode(
       error,
     );
     // Fallback to plain text with default color on error
-    // Also display line numbers in fallback
-    const lines = codeToHighlight.split('\n');
-    const padWidth = String(lines.length).length; // Calculate padding width based on number of lines
-    return (
-      <MaxSizedBox
-        maxHeight={availableHeight}
-        maxWidth={maxWidth}
-        overflowDirection="top"
-      >
-        {lines.map((line, index) => (
-          <Box key={index}>
-            <Text color={activeTheme.defaultColor}>
-              {`${String(index + 1).padStart(padWidth, ' ')} `}
-            </Text>
-            <Text color={activeTheme.colors.Gray}>{line}</Text>
-          </Box>
-        ))}
-      </MaxSizedBox>
-    );
+    return renderFallback(codeToHighlight);
   }
 }
