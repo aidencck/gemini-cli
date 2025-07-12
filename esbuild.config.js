@@ -21,6 +21,8 @@ esbuild
     outfile: 'bundle/gemini.js',
     platform: 'node',
     format: 'esm',
+    minify: true, // Remove unnecessary whitespace & dead code
+    treeShaking: true,
     define: {
       'process.env.CLI_VERSION': JSON.stringify(pkg.version),
     },
