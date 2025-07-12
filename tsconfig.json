@@ -13,8 +13,12 @@
     "allowSyntheticDefaultImports": true,
     "types": ["node", "react", "ink", "vitest/globals"],
     "lib": ["ES2023"],
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./packages/cli/src/types"
+    ],
     "target": "es2022"
   }
 }
