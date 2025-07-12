@@ -1,20 +1,14 @@
 // `lowlight` does not ship its own type declarations (yet).  
 // Suppress the missing type errors so that `tsc` will accept the import.
-// @ts-expect-error – external module without types
 import { createLowlight } from 'lowlight';
 
 // Import only the languages that are actually rendered by the CLI UI.  
 // Add additional languages here when required but avoid the full `common` set
 // to keep the bundled size small.
-// @ts-expect-error – external module without types
 import javascript from 'highlight.js/lib/languages/javascript';
-// @ts-expect-error – external module without types
 import typescript from 'highlight.js/lib/languages/typescript';
-// @ts-expect-error – external module without types
 import json from 'highlight.js/lib/languages/json';
-// @ts-expect-error – external module without types
 import bash from 'highlight.js/lib/languages/bash';
-// @ts-expect-error – external module without types
 import diff from 'highlight.js/lib/languages/diff';
 
 /**
