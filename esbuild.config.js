@@ -25,8 +25,12 @@ esbuild
     treeShaking: true,
     sourcemap: false,
     external: [
-      // Mark heavy optional runtime-only deps so they are kept as node externals
-      /^@opentelemetry\/.*/, // all OpenTelemetry packages
+      '@opentelemetry/api',
+      '@opentelemetry/exporter-logs-otlp-grpc',
+      '@opentelemetry/exporter-metrics-otlp-grpc',
+      '@opentelemetry/exporter-trace-otlp-grpc',
+      '@opentelemetry/instrumentation-http',
+      '@opentelemetry/sdk-node',
       'react-devtools-core',
     ],
     define: {
