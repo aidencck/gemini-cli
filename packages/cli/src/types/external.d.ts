@@ -30,3 +30,9 @@ declare module 'highlight.js/lib/languages/*' {
   const lang: any;
   export default lang;
 }
+
+// ----- string-width ---------------------------------------------------------
+declare module 'string-width' {
+  const stringWidth: (str: string) => number;
+  export default stringWidth;
+}
